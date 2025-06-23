@@ -102,9 +102,10 @@ fn main() -> Result<(), ()> {
         // instead of a set length, or at least allow the length to be
         // customized. shep probably already wrote this logic so check his impl first
         let clip_len = 300; // hardcoded to 5s for now
-        let message = r#"This note was added because you pressed D-pad down here.
-To configure this behavior (disable or modify default clip length),
-change your improover settings"#; // markdown links don't render in rwing 😢
+        // markdown links don't render in rwing 😢, cant include link to instructions
+        // for configuring
+        // TODO: use whatever binding was configured at the time
+        let message = "Auto-inserted note for d-pad down press";
         notes.add_range((f - clip_len).max(0)..f, Note::Text(message));
         added += 1;
     }

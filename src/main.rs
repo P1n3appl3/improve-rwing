@@ -1,19 +1,23 @@
 use std::{env, fs, ops::Range, path::PathBuf};
 
-use slp_parser::{Game, Notes, buttons_mask};
+use slp_parser::{Frame, Game, Notes, buttons_mask};
 
 enum Note<'a> {
     Text(&'a str),
+
     // TODO: document how images are compressed, either snoop for symbols in rwing or ask
-    // aitch...
+    #[allow(unused)]
     Image(&'a [u8]),
 }
 
 trait NotesExt {
     fn add(&mut self, start: i32, len: Option<i32>, note: Note);
+
+    #[allow(unused)]
     fn add_note(&mut self, frame: i32, note: Note) {
         self.add(frame, None, note);
     }
+
     fn add_range(&mut self, frames: Range<i32>, note: Note) {
         self.add(frames.start, Some(frames.end - frames.start), note)
     }
@@ -53,14 +57,19 @@ fn get_presses(game: &Game) -> Vec<usize> {
         .position(|s| s.starts_with("pineapple"))
         .expect("didn't see your user in this game");
 
+    // TODO: use user-specified key, or some key combination to trigger instead of
+    // just hardcoding dpad down...
+    fn pressed(frame: &Frame) -> bool {
+        frame.buttons_mask & buttons_mask::D_PAD_DOWN != 0
+    }
+
+    // rising edge detection
     game.frames[port]
         .as_ref()
         .expect("no frames for your port")
-        .iter()
+        .windows(2)
         .enumerate()
-        // TODO: use user-specified key, or some key combination to trigger instead of just
-        // hardcoding dpad down...
-        .filter(|(_, frame)| frame.buttons_mask & buttons_mask::D_PAD_DOWN != 0)
+        .filter(|(_, frames)| (pressed(&frames[0]), pressed(&frames[1])) == (false, true))
         .map(|(i, _)| i)
         .collect::<Vec<usize>>()
 }
@@ -76,6 +85,7 @@ fn main() -> Result<(), ()> {
     };
 
     let mut added = 0;
+    let mut skipped = 0;
     'outer: for f in get_presses(&game) {
         let f = f as i32; // why'd aitch make these signed?
 
@@ -83,6 +93,7 @@ fn main() -> Result<(), ()> {
         // collide with existing ones
         for (&start, &len) in notes.start_frames.iter().zip(&notes.frame_lengths) {
             if start == f || start + len == f {
+                skipped += 1;
                 continue 'outer;
             }
         }
@@ -91,13 +102,17 @@ fn main() -> Result<(), ()> {
         // instead of a set length, or at least allow the length to be
         // customized. shep probably already wrote this logic so check his impl first
         let clip_len = 300; // hardcoded to 5s for now
-        let message = r#"This clip was added because you pressed D-pad down.
-To configure this behavior, change your improover settings [here](https://example.com)"#;
+        let message = r#"This note was added because you pressed D-pad down here.
+To configure this behavior (disable or modify default clip length),
+change your improover settings"#; // markdown links don't render in rwing 😢
         notes.add_range((f - clip_len).max(0)..f, Note::Text(message));
         added += 1;
     }
 
     println!("Added {added} notes to your replay");
+    if skipped > 0 {
+        println!("Skipped {skipped} already existing notes");
+    }
     slp_parser::write_notes_to_game(&PathBuf::from(path), &notes).unwrap();
     Ok(())
 }

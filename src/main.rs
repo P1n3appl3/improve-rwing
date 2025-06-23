@@ -106,6 +106,9 @@ fn main() -> Result<(), ()> {
         // for configuring
         // TODO: use whatever binding was configured at the time
         let message = "Auto-inserted note for d-pad down press";
+
+        // TODO: improve handling of multiple presses in a short time, merge into a single note
+        // or just add a lockout time after each press where additional presses don't add notes
         notes.add_range((f - clip_len).max(0)..f, Note::Text(message));
         added += 1;
     }

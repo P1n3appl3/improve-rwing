@@ -1,3 +1,6 @@
+> [!NOTE]
+> As of rwing alpha 2.2, this feature works out of the box, obviating this tool
+
 Fictions [improover](https://github.com/Fiction52s/Melee-Improover) tool made me realize it'd be nice if rwing showed me notes for all the times I pressed a specific trigger button combo (in this case, just dpad-down).
 
 ![example image](https://github.com/user-attachments/assets/03630c4a-a743-4cbc-b86f-eda76cc5dd84)
